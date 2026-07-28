@@ -1,7 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CheckCircle2, ImagePlus, Loader2, Sparkles, Upload } from "lucide-react";
+import Image from "next/image";
+import {
+  CheckCircle2,
+  ImagePlus,
+  Loader2,
+  Sparkles,
+  Star,
+  X,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,69 +29,223 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BIKE_SOURCES } from "@/types/bike";
-import { formatPriceVND } from "@/lib/utils";
+import { BIKE_CATEGORIES, BIKE_SOURCES, BikeCategory, BikeSource } from "@/types/bike";
+import { cn, formatPriceVND } from "@/lib/utils";
+
+interface UploadedImage {
+  id: string;
+  file: File;
+  url: string;
+}
 
 interface AiListingDraft {
   name: string;
   brand: string;
-  category: string;
-  condition: string;
+  category: BikeCategory;
+  productType: string;
+  configuration: string;
+  conditionPercent: number;
+  scratches: string;
   price: number;
+  source: BikeSource;
   description: string;
-  source: string;
 }
 
-const SAMPLE_DRAFTS: AiListingDraft[] = [
+interface AnalysisTemplate {
+  name: string;
+  brand: string;
+  category: BikeCategory;
+  productType: string;
+  configuration: string;
+  basePrice: number;
+  source: BikeSource;
+  descriptionBase: string;
+}
+
+const ANALYSIS_TEMPLATES: AnalysisTemplate[] = [
   {
-    name: "Giant Escape 3 Nhôm ALUXX",
+    name: "Giant Escape 3",
     brand: "Giant",
-    category: "Xe Đạp Thể Thao",
-    condition: "Mới 100%",
-    price: 6200000,
-    description:
-      "Xe đạp thể thao khung nhôm ALUXX nhẹ, phù hợp đi phố và tập luyện thể thao hàng ngày. Bộ truyền động Shimano 24 tốc độ, phanh đĩa cơ an toàn.",
+    category: "SPORTS",
+    productType: "Xe Đạp Thể Thao",
+    configuration:
+      "Khung nhôm ALUXX, bộ truyền động Shimano 24 tốc độ, phanh đĩa cơ, bánh 700c",
+    basePrice: 6200000,
     source: "xa-kho",
+    descriptionBase:
+      "Xe đạp thể thao khung nhôm nhẹ, phù hợp đi phố và tập luyện thể thao hàng ngày.",
   },
   {
-    name: "Trek Marlin 5 Địa Hình",
+    name: "Trek Marlin 5",
     brand: "Trek",
-    category: "Xe Đạp Địa Hình",
-    condition: "Đã qua sử dụng - 95%",
-    price: 7500000,
-    description:
-      "Xe địa hình Trek Marlin 5, khung Alpha Silver Aluminum bền bỉ, phanh đĩa dầu, phù hợp off-road nhẹ và di chuyển đường phố.",
+    category: "SPORTS",
+    productType: "Xe Đạp Địa Hình",
+    configuration:
+      "Khung Alpha Silver Aluminum, Shimano 21 tốc độ, phanh đĩa dầu, bánh 29 inch",
+    basePrice: 7500000,
     source: "thanh-ly",
+    descriptionBase:
+      "Xe địa hình bền bỉ, phù hợp off-road nhẹ và di chuyển đường phố hàng ngày.",
+  },
+  {
+    name: "Asama FLD 2701",
+    brand: "Asama",
+    category: "STANDARD",
+    productType: "Xe Đạp Gấp",
+    configuration:
+      "Khung thép hợp kim, Shimano 6 tốc độ, phanh V-brake, bánh 20 inch",
+    basePrice: 2100000,
+    source: "xa-kho",
+    descriptionBase:
+      "Xe đạp gấp gọn tiện lợi, thích hợp di chuyển trong thành phố và mang lên xe khách.",
+  },
+  {
+    name: "Royal Baby 16 inch",
+    brand: "Royal Baby",
+    category: "KIDS",
+    productType: "Xe Đạp Trẻ Em",
+    configuration:
+      "Khung thép hợp kim cao cấp, bánh 16 inch, có bánh phụ tháo lắp, phanh đùi + phanh tay",
+    basePrice: 1890000,
+    source: "xa-kho",
+    descriptionBase:
+      "Xe đạp trẻ em an toàn, khung nhỏ gọn, phù hợp bé 4-7 tuổi.",
   },
 ];
 
-type Stage = "upload" | "analyzing" | "review" | "published";
+function analyzeAdminNotes(notes: string): {
+  conditionPercent: number;
+  scratches: string;
+  noteSummary: string;
+} {
+  const lower = notes.toLowerCase();
+  let conditionPercent = 95;
+  const scratchNotes: string[] = [];
+
+  if (
+    lower.includes("mới 100") ||
+    lower.includes("chưa qua sử dụng") ||
+    lower.includes("nguyên hộp") ||
+    lower.includes("nguyên seal")
+  ) {
+    conditionPercent = 100;
+  }
+  if (lower.includes("xước") || lower.includes("trầy")) {
+    conditionPercent -= 8;
+    scratchNotes.push("Có vết xước nhẹ theo mô tả của admin");
+  }
+  if (
+    lower.includes("cũ") ||
+    lower.includes("đã dùng") ||
+    lower.includes("đã qua sử dụng")
+  ) {
+    conditionPercent -= 15;
+  }
+  if (lower.includes("móp") || lower.includes("gỉ") || lower.includes("rỉ sét")) {
+    conditionPercent -= 12;
+    scratchNotes.push("Ghi nhận móp/gỉ sét nhẹ theo mô tả của admin");
+  }
+  if (
+    lower.includes("thay") ||
+    lower.includes("bảo dưỡng") ||
+    lower.includes("bảo trì")
+  ) {
+    scratchNotes.push("Đã được thay thế/bảo dưỡng một số phụ tùng theo ghi chú admin");
+  }
+
+  conditionPercent = Math.max(50, Math.min(100, conditionPercent));
+
+  const scratches =
+    scratchNotes.length > 0
+      ? scratchNotes.join(". ") + "."
+      : "Ngoại hình còn tốt, không ghi nhận lỗi đáng kể qua ảnh.";
+
+  const noteSummary = notes.trim()
+    ? `Ghi chú admin: "${notes.trim()}".`
+    : "";
+
+  return { conditionPercent, scratches, noteSummary };
+}
+
+type Stage = "input" | "analyzing" | "review" | "published";
 
 export default function AutoListingPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [stage, setStage] = useState<Stage>("upload");
+  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [adminNotes, setAdminNotes] = useState("");
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [stage, setStage] = useState<Stage>("input");
   const [draft, setDraft] = useState<AiListingDraft | null>(null);
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [gallery, setGallery] = useState<string[]>([]);
 
-  const handleFileSelect = (file: File | undefined) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result as string);
-    reader.readAsDataURL(file);
-    setStage("upload");
-    setDraft(null);
+  const addFiles = (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter((file) =>
+      file.type.startsWith("image/")
+    );
+    if (files.length === 0) return;
+
+    const newImages: UploadedImage[] = files.map((file) => ({
+      id: `${file.name}-${file.size}-${file.lastModified}-${Math.random()
+        .toString(36)
+        .slice(2)}`,
+      file,
+      url: URL.createObjectURL(file),
+    }));
+
+    setImages((prev) => [...prev, ...newImages]);
+  };
+
+  const handleFileInputChange = (fileList: FileList | null) => {
+    if (!fileList) return;
+    addFiles(fileList);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files?.length) {
+      addFiles(e.dataTransfer.files);
+    }
+  };
+
+  const removeImage = (id: string) => {
+    setImages((prev) => {
+      const target = prev.find((img) => img.id === id);
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter((img) => img.id !== id);
+    });
   };
 
   const handleAnalyze = () => {
-    if (!imagePreview) return;
+    if (images.length === 0) return;
     setStage("analyzing");
 
     setTimeout(() => {
-      const sample =
-        SAMPLE_DRAFTS[Math.floor(Math.random() * SAMPLE_DRAFTS.length)];
-      setDraft(sample);
+      const template =
+        ANALYSIS_TEMPLATES[Math.floor(Math.random() * ANALYSIS_TEMPLATES.length)];
+      const { conditionPercent, scratches, noteSummary } =
+        analyzeAdminNotes(adminNotes);
+
+      setDraft({
+        name: template.name,
+        brand: template.brand,
+        category: template.category,
+        productType: template.productType,
+        configuration: template.configuration,
+        conditionPercent,
+        scratches,
+        price: template.basePrice,
+        source: template.source,
+        description: [template.descriptionBase, noteSummary]
+          .filter(Boolean)
+          .join(" "),
+      });
+
+      setThumbnail(images[0].url);
+      setGallery(images.slice(1).map((img) => img.url));
       setStage("review");
-    }, 1800);
+    }, 2000);
   };
 
   const handlePublish = () => {
@@ -91,9 +253,13 @@ export default function AutoListingPage() {
   };
 
   const handleReset = () => {
-    setImagePreview(null);
+    images.forEach((img) => URL.revokeObjectURL(img.url));
+    setImages([]);
+    setAdminNotes("");
     setDraft(null);
-    setStage("upload");
+    setThumbnail(null);
+    setGallery([]);
+    setStage("input");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -105,63 +271,108 @@ export default function AutoListingPage() {
           AI Auto-Listing
         </h1>
         <p className="text-sm text-muted-foreground">
-          Upload ảnh xe đạp, AI sẽ tự động nhận diện và điền thông tin sản
-          phẩm để lên bài nhanh chóng.
+          Upload nhiều ảnh xe đạp kèm ghi chú, AI sẽ tự động nhận diện và điền
+          thông tin sản phẩm để lên bài nhanh chóng.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">1. Upload Ảnh Xe</CardTitle>
+            <CardTitle className="text-base">
+              Bước 1: Nhập Liệu Cho AI
+            </CardTitle>
             <CardDescription>
-              Chọn ảnh rõ nét, đủ ánh sáng để AI nhận diện chính xác nhất.
+              Upload nhiều ảnh (ảnh đầu tiên sẽ là ảnh đại diện) và ghi chú
+              thêm để AI phân tích chính xác hơn.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <button
-              type="button"
+            <div
               onClick={() => fileInputRef.current?.click()}
-              className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-muted/40 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-            >
-              {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  alt="Ảnh xe đạp đã upload"
-                  className="h-full w-full rounded-xl object-cover"
-                />
-              ) : (
-                <>
-                  <ImagePlus className="h-10 w-10" />
-                  <span className="text-sm font-medium">
-                    Nhấn để chọn ảnh xe đạp
-                  </span>
-                </>
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragOver(true);
+              }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={handleDrop}
+              role="button"
+              tabIndex={0}
+              className={cn(
+                "flex min-h-[160px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-muted/40 p-6 text-center text-muted-foreground transition-colors hover:border-primary hover:text-primary",
+                isDragOver && "border-primary bg-primary/5 text-primary"
               )}
-            </button>
+            >
+              <ImagePlus className="h-10 w-10" />
+              <span className="text-sm font-medium">
+                Kéo thả ảnh vào đây hoặc nhấn để chọn (có thể chọn nhiều ảnh)
+              </span>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
-              onChange={(e) => handleFileSelect(e.target.files?.[0])}
+              onChange={(e) => handleFileInputChange(e.target.files)}
             />
+
+            {images.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {images.map((img, index) => (
+                  <div
+                    key={img.id}
+                    className="group relative aspect-square overflow-hidden rounded-lg border bg-muted"
+                  >
+                    <Image
+                      src={img.url}
+                      alt={`Ảnh xe đạp ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                    {index === 0 && (
+                      <span className="absolute left-1 top-1 flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                        <Star className="h-2.5 w-2.5" />
+                        Đại diện
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(img.id)}
+                      className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      aria-label="Xóa ảnh"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="admin-notes">Ghi Chú Thêm Cho AI (tùy chọn)</Label>
+              <Textarea
+                id="admin-notes"
+                rows={3}
+                placeholder='VD: "Xe mua năm ngoái, đã thay xích, xước nhẹ ở yên"'
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+              />
+            </div>
 
             <Button
               onClick={handleAnalyze}
-              disabled={!imagePreview || stage === "analyzing"}
+              disabled={images.length === 0 || stage === "analyzing"}
               size="lg"
             >
               {stage === "analyzing" ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  AI đang phân tích ảnh...
+                  AI Đang Phân Tích...
                 </>
               ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  Phân Tích Bằng AI
-                </>
+                "🤖 AI Bắt Đầu Phân Tích & Lên Bài"
               )}
             </Button>
           </CardContent>
@@ -170,7 +381,7 @@ export default function AutoListingPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
-              2. Xác Nhận Thông Tin &amp; Đăng Bài
+              Bước 2 &amp; 3: Kết Quả Phân Tích &amp; Đăng Bài
             </CardTitle>
             <CardDescription>
               AI đã điền sẵn thông tin, bạn kiểm tra và chỉnh sửa trước khi
@@ -178,16 +389,36 @@ export default function AutoListingPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {stage === "upload" || stage === "analyzing" ? (
+            {stage === "input" || stage === "analyzing" ? (
               <div className="flex h-full min-h-[280px] flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
-                <Sparkles className="h-8 w-8 opacity-40" />
-                {stage === "analyzing"
-                  ? "AI đang nhận diện thương hiệu, dòng xe và tình trạng..."
-                  : "Upload ảnh và nhấn \"Phân Tích Bằng AI\" để bắt đầu."}
+                {stage === "analyzing" ? (
+                  <>
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    AI đang phân tích {images.length} ảnh
+                    {adminNotes.trim() ? " và ghi chú của bạn" : ""}...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-8 w-8 opacity-40" />
+                    Upload ảnh và nhấn &quot;AI Bắt Đầu Phân Tích &amp; Lên
+                    Bài&quot; để bắt đầu.
+                  </>
+                )}
               </div>
             ) : stage === "published" ? (
               <div className="flex h-full min-h-[280px] flex-col items-center justify-center gap-3 text-center">
-                <CheckCircle2 className="h-14 w-14 text-green-600" />
+                {thumbnail && (
+                  <div className="relative h-24 w-24 overflow-hidden rounded-xl border">
+                    <Image
+                      src={thumbnail}
+                      alt="Ảnh đại diện sản phẩm"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                )}
+                <CheckCircle2 className="h-10 w-10 text-green-600" />
                 <p className="text-lg font-semibold">Đã Đăng Bài Thành Công!</p>
                 <p className="text-sm text-muted-foreground">
                   Sản phẩm &quot;{draft?.name}&quot; đã được thêm vào cửa hàng.
@@ -199,6 +430,41 @@ export default function AutoListingPage() {
             ) : (
               draft && (
                 <div className="flex flex-col gap-4">
+                  <div className="flex gap-3">
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border">
+                      {thumbnail && (
+                        <Image
+                          src={thumbnail}
+                          alt="Ảnh đại diện"
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      )}
+                      <span className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 text-center text-[9px] font-medium text-white">
+                        Ảnh đại diện
+                      </span>
+                    </div>
+                    {gallery.length > 0 && (
+                      <div className="flex flex-1 gap-2 overflow-x-auto">
+                        {gallery.map((url) => (
+                          <div
+                            key={url}
+                            className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border"
+                          >
+                            <Image
+                              src={url}
+                              alt="Ảnh gallery"
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="ai-name">Tên Sản Phẩm</Label>
                     <Input
@@ -223,14 +489,35 @@ export default function AutoListingPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="ai-category">Danh Mục</Label>
-                      <Input
-                        id="ai-category"
+                      <Select
                         value={draft.category}
-                        onChange={(e) =>
-                          setDraft({ ...draft, category: e.target.value })
+                        onValueChange={(value) =>
+                          setDraft({ ...draft, category: value as BikeCategory })
                         }
-                      />
+                      >
+                        <SelectTrigger id="ai-category">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.values(BIKE_CATEGORIES).map((cat) => (
+                            <SelectItem key={cat.value} value={cat.value}>
+                              {cat.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="ai-config">Cấu Hình</Label>
+                    <Input
+                      id="ai-config"
+                      value={draft.configuration}
+                      onChange={(e) =>
+                        setDraft({ ...draft, configuration: e.target.value })
+                      }
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -253,7 +540,7 @@ export default function AutoListingPage() {
                       <Select
                         value={draft.source}
                         onValueChange={(value) =>
-                          setDraft({ ...draft, source: value })
+                          setDraft({ ...draft, source: value as BikeSource })
                         }
                       >
                         <SelectTrigger id="ai-source">
@@ -270,15 +557,35 @@ export default function AutoListingPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="ai-condition">Tình Trạng</Label>
-                    <Input
-                      id="ai-condition"
-                      value={draft.condition}
-                      onChange={(e) =>
-                        setDraft({ ...draft, condition: e.target.value })
-                      }
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="ai-condition-percent">
+                        % Độ Mới
+                      </Label>
+                      <Input
+                        id="ai-condition-percent"
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={draft.conditionPercent}
+                        onChange={(e) =>
+                          setDraft({
+                            ...draft,
+                            conditionPercent: Number(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="ai-scratches">Vết Trầy Xước</Label>
+                      <Input
+                        id="ai-scratches"
+                        value={draft.scratches}
+                        onChange={(e) =>
+                          setDraft({ ...draft, scratches: e.target.value })
+                        }
+                      />
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -295,7 +602,7 @@ export default function AutoListingPage() {
 
                   <Button size="lg" onClick={handlePublish}>
                     <CheckCircle2 className="h-4 w-4" />
-                    Đăng Bài Ngay
+                    Đăng Sản Phẩm
                   </Button>
                 </div>
               )

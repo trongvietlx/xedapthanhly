@@ -41,7 +41,7 @@ export function BikeCard({ bike }: BikeCardProps) {
 
         <div className="flex flex-1 flex-col gap-2 p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {bike.brand} · {bike.category}
+            {bike.brand} · {bike.productType}
           </p>
           <Link href={`/bike/${bike.slug}`}>
             <h3 className="line-clamp-2 font-semibold leading-snug hover:text-primary">

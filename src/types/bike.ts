@@ -24,6 +24,38 @@ export const BIKE_SOURCES: Record<BikeSource, BikeSourceInfo> = {
   },
 };
 
+export type BikeCategory = "KIDS" | "STANDARD" | "SPORTS";
+
+export interface BikeCategoryInfo {
+  value: BikeCategory;
+  label: string;
+  description: string;
+}
+
+export const BIKE_CATEGORIES: Record<BikeCategory, BikeCategoryInfo> = {
+  SPORTS: {
+    value: "SPORTS",
+    label: "Xe Đạp Thể Thao",
+    description: "Xe địa hình, đua, touring hiệu suất cao",
+  },
+  STANDARD: {
+    value: "STANDARD",
+    label: "Xe Đạp Thông Dụng",
+    description: "Xe đi làm, đi học, di chuyển hàng ngày",
+  },
+  KIDS: {
+    value: "KIDS",
+    label: "Xe Đạp Trẻ Em",
+    description: "Xe đạp dành cho các bé, nhiều size khác nhau",
+  },
+};
+
+export const BIKE_CATEGORY_ORDER: BikeCategory[] = [
+  "SPORTS",
+  "STANDARD",
+  "KIDS",
+];
+
 export type BikeCondition = "moi-100" | "moi-99" | "da-qua-su-dung";
 
 export interface Bike {
@@ -31,7 +63,9 @@ export interface Bike {
   slug: string;
   name: string;
   brand: string;
-  category: string;
+  /** Loại xe cụ thể để hiển thị (VD: "Xe Đạp Địa Hình", "Xe Đạp Gấp") */
+  productType: string;
+  category: BikeCategory;
   source: BikeSource;
   condition: BikeCondition;
   originalPrice: number;
@@ -44,5 +78,7 @@ export interface Bike {
   specs: Record<string, string>;
   location: string;
   isFeatured?: boolean;
+  /** false = ẩn khỏi web (hết xe / ngừng theo dõi) */
+  isActive: boolean;
   createdAt: string;
 }

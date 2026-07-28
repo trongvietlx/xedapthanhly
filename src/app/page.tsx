@@ -1,29 +1,11 @@
-import Link from "next/link";
 import { Bike as BikeIcon, PhoneCall, ShieldCheck, Truck } from "lucide-react";
 
 import { mockBikes } from "@/data/mockBikes";
 import { BikeCard } from "@/components/BikeCard";
-import { BIKE_SOURCES, BikeSource } from "@/types/bike";
-import { cn } from "@/lib/utils";
+import { BIKE_CATEGORIES, BIKE_CATEGORY_ORDER } from "@/types/bike";
 
-const FILTERS: { label: string; value: BikeSource | "all" }[] = [
-  { label: "Tất Cả", value: "all" },
-  { label: BIKE_SOURCES["thanh-ly"].label, value: "thanh-ly" },
-  { label: BIKE_SOURCES["xa-kho"].label, value: "xa-kho" },
-  { label: BIKE_SOURCES["trung-bay"].label, value: "trung-bay" },
-];
-
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ source?: string }>;
-}) {
-  const resolvedSearchParams = await searchParams;
-  const activeSource = resolvedSearchParams.source ?? "all";
-  const bikes =
-    activeSource === "all"
-      ? mockBikes
-      : mockBikes.filter((bike) => bike.source === activeSource);
+export default function HomePage() {
+  const activeBikes = mockBikes.filter((bike) => bike.isActive);
 
   return (
     <main>
@@ -69,36 +51,38 @@ export default async function HomePage({
         </div>
       </section>
 
-      <section className="container py-8">
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          {FILTERS.map((filter) => (
-            <Link
-              key={filter.value}
-              href={filter.value === "all" ? "/" : `/?source=${filter.value}`}
-              className={cn(
-                "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
-                activeSource === filter.value
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-input bg-background hover:bg-accent"
-              )}
-            >
-              {filter.label}
-            </Link>
-          ))}
-        </div>
+      <div className="container flex flex-col gap-12 py-10">
+        {BIKE_CATEGORY_ORDER.map((category) => {
+          const categoryInfo = BIKE_CATEGORIES[category];
+          const bikesInCategory = activeBikes.filter(
+            (bike) => bike.category === category
+          );
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {bikes.map((bike) => (
-            <BikeCard key={bike.id} bike={bike} />
-          ))}
-        </div>
+          if (bikesInCategory.length === 0) return null;
 
-        {bikes.length === 0 && (
+          return (
+            <section key={category}>
+              <div className="mb-5 flex flex-col gap-1">
+                <h2 className="text-2xl font-bold">{categoryInfo.label}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {categoryInfo.description}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {bikesInCategory.map((bike) => (
+                  <BikeCard key={bike.id} bike={bike} />
+                ))}
+              </div>
+            </section>
+          );
+        })}
+
+        {activeBikes.length === 0 && (
           <p className="py-12 text-center text-muted-foreground">
-            Hiện chưa có xe nào trong danh mục này.
+            Hiện chưa có xe nào đang được bày bán.
           </p>
         )}
-      </section>
+      </div>
 
       <footer className="border-t bg-muted/40 py-8">
         <div className="container text-center text-sm text-muted-foreground">

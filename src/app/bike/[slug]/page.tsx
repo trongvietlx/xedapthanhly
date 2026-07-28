@@ -9,7 +9,7 @@ import { BikeDetailBooking } from "@/components/BikeDetailBooking";
 import { formatPriceVND } from "@/lib/utils";
 
 export function generateStaticParams() {
-  return mockBikes.map((bike) => ({ slug: bike.slug }));
+  return mockBikes.filter((bike) => bike.isActive).map((bike) => ({ slug: bike.slug }));
 }
 
 export default async function BikeDetailPage({
@@ -20,7 +20,7 @@ export default async function BikeDetailPage({
   const { slug } = await params;
   const bike = getBikeBySlug(slug);
 
-  if (!bike) {
+  if (!bike || !bike.isActive) {
     notFound();
   }
 
@@ -70,7 +70,7 @@ export default async function BikeDetailPage({
         <div className="flex flex-col gap-4">
           <div>
             <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-              {bike.brand} · {bike.category}
+              {bike.brand} · {bike.productType}
             </p>
             <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{bike.name}</h1>
             <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
