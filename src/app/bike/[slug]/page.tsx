@@ -1,24 +1,27 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { notFound, useParams } from "next/navigation";
+import { ArrowLeft, Loader2, MapPin } from "lucide-react";
 
-import { getBikeBySlug, mockBikes } from "@/data/mockBikes";
+import { useBikes } from "@/context/BikeContext";
 import { SourceBadge } from "@/components/SourceBadge";
 import { BikeDetailBooking } from "@/components/BikeDetailBooking";
-import { formatPriceVND } from "@/lib/utils";
+import { formatPriceVND, isDataUrl } from "@/lib/utils";
 
-export function generateStaticParams() {
-  return mockBikes.filter((bike) => bike.isActive).map((bike) => ({ slug: bike.slug }));
-}
+export default function BikeDetailPage() {
+  const params = useParams<{ slug: string }>();
+  const { bikes, isHydrated } = useBikes();
+  const bike = bikes.find((b) => b.slug === params.slug);
 
-export default async function BikeDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const bike = getBikeBySlug(slug);
+  if (!isHydrated) {
+    return (
+      <main className="container flex min-h-[50vh] items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </main>
+    );
+  }
 
   if (!bike || !bike.isActive) {
     notFound();
@@ -43,6 +46,7 @@ export default async function BikeDetailPage({
               fill
               className="object-cover"
               priority
+              unoptimized={isDataUrl(bike.images[0] ?? bike.thumbnail)}
             />
             <div className="absolute left-3 top-3">
               <SourceBadge source={bike.source} />
@@ -60,6 +64,7 @@ export default async function BikeDetailPage({
                     alt={`${bike.name} ${i + 1}`}
                     fill
                     className="object-cover"
+                    unoptimized={isDataUrl(img)}
                   />
                 </div>
               ))}

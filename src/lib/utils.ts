@@ -20,3 +20,18 @@ export function toZaloLink(phone: string): string {
     : digitsOnly;
   return `https://zalo.me/${normalized}`;
 }
+
+/** Ảnh base64 (từ xe đăng qua AI Auto-Listing) cần bỏ qua Next Image Optimizer. */
+export function isDataUrl(src: string): boolean {
+  return src.startsWith("data:");
+}
+
+export function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}

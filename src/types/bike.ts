@@ -73,6 +73,18 @@ export const BIKE_CATEGORY_ORDER: BikeCategory[] = [
   "FOLDING",
 ];
 
+/** Khoảng chiều cao người lái phù hợp mặc định theo từng danh mục (cm). */
+export const DEFAULT_HEIGHT_RANGE_BY_CATEGORY: Record<
+  BikeCategory,
+  { heightMin: number; heightMax: number }
+> = {
+  SPORTS: { heightMin: 160, heightMax: 185 },
+  KIDS: { heightMin: 100, heightMax: 130 },
+  STANDARD: { heightMin: 155, heightMax: 180 },
+  ELECTRIC: { heightMin: 155, heightMax: 180 },
+  FOLDING: { heightMin: 150, heightMax: 175 },
+};
+
 export type BikeCondition = "moi-100" | "moi-99" | "da-qua-su-dung";
 
 export const BIKE_CONDITION_LABELS: Record<BikeCondition, string> = {

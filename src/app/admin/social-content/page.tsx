@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Megaphone } from "lucide-react";
 
-import { mockBikes } from "@/data/mockBikes";
+import { useBikes } from "@/context/BikeContext";
 import { SocialContentPanel } from "@/components/SocialContentPanel";
 import {
   Select,
@@ -20,15 +20,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatPriceVND } from "@/lib/utils";
+import { formatPriceVND, isDataUrl } from "@/lib/utils";
 
 export default function AdminSocialContentPage() {
-  const [selectedBikeId, setSelectedBikeId] = useState<string>(
-    mockBikes[0]?.id ?? ""
-  );
+  const { bikes } = useBikes();
+  const [selectedBikeId, setSelectedBikeId] = useState<string>("");
 
+  const effectiveBikeId = selectedBikeId || bikes[0]?.id || "";
   const selectedBike =
-    mockBikes.find((bike) => bike.id === selectedBikeId) ?? null;
+    bikes.find((bike) => bike.id === effectiveBikeId) ?? null;
 
   return (
     <main className="container py-8">
@@ -51,12 +51,12 @@ export default function AdminSocialContentPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Select value={selectedBikeId} onValueChange={setSelectedBikeId}>
+          <Select value={effectiveBikeId} onValueChange={setSelectedBikeId}>
             <SelectTrigger className="w-full sm:w-96">
               <SelectValue placeholder="Chọn xe" />
             </SelectTrigger>
             <SelectContent>
-              {mockBikes.map((bike) => (
+              {bikes.map((bike) => (
                 <SelectItem key={bike.id} value={bike.id}>
                   {bike.name} - {bike.brand} ({formatPriceVND(bike.price)})
                 </SelectItem>
@@ -77,6 +77,7 @@ export default function AdminSocialContentPage() {
                   fill
                   className="object-cover"
                   sizes="56px"
+                  unoptimized={isDataUrl(selectedBike.thumbnail)}
                 />
               </div>
               <div>

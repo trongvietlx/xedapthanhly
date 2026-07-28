@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   CheckCircle2,
@@ -29,8 +30,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BIKE_CATEGORIES, BIKE_SOURCES, BikeCategory, BikeSource } from "@/types/bike";
-import { cn, formatPriceVND } from "@/lib/utils";
+import { useBikes } from "@/context/BikeContext";
+import {
+  Bike,
+  BIKE_CATEGORIES,
+  BIKE_SOURCES,
+  BikeCategory,
+  BikeCondition,
+  BikeSource,
+  DEFAULT_HEIGHT_RANGE_BY_CATEGORY,
+} from "@/types/bike";
+import { cn, formatPriceVND, slugify } from "@/lib/utils";
 
 interface UploadedImage {
   id: string;
@@ -48,6 +58,7 @@ interface AiListingDraft {
   scratches: string;
   price: number;
   source: BikeSource;
+  location: string;
   description: string;
 }
 
@@ -59,6 +70,7 @@ interface AnalysisTemplate {
   configuration: string;
   basePrice: number;
   source: BikeSource;
+  location: string;
   descriptionBase: string;
 }
 
@@ -72,6 +84,7 @@ const ANALYSIS_TEMPLATES: AnalysisTemplate[] = [
       "Khung nhôm ALUXX, bộ truyền động Shimano 24 tốc độ, phanh đĩa cơ, bánh 700c",
     basePrice: 6200000,
     source: "xa-kho",
+    location: "Kho Bình Dương",
     descriptionBase:
       "Xe đạp thể thao khung nhôm nhẹ, phù hợp đi phố và tập luyện thể thao hàng ngày.",
   },
@@ -84,18 +97,20 @@ const ANALYSIS_TEMPLATES: AnalysisTemplate[] = [
       "Khung Alpha Silver Aluminum, Shimano 21 tốc độ, phanh đĩa dầu, bánh 29 inch",
     basePrice: 7500000,
     source: "thanh-ly",
+    location: "Showroom Quận 7, TP.HCM",
     descriptionBase:
       "Xe địa hình bền bỉ, phù hợp off-road nhẹ và di chuyển đường phố hàng ngày.",
   },
   {
     name: "Asama FLD 2701",
     brand: "Asama",
-    category: "STANDARD",
+    category: "FOLDING",
     productType: "Xe Đạp Gấp",
     configuration:
       "Khung thép hợp kim, Shimano 6 tốc độ, phanh V-brake, bánh 20 inch",
     basePrice: 2100000,
     source: "xa-kho",
+    location: "Kho Bình Dương",
     descriptionBase:
       "Xe đạp gấp gọn tiện lợi, thích hợp di chuyển trong thành phố và mang lên xe khách.",
   },
@@ -108,8 +123,22 @@ const ANALYSIS_TEMPLATES: AnalysisTemplate[] = [
       "Khung thép hợp kim cao cấp, bánh 16 inch, có bánh phụ tháo lắp, phanh đùi + phanh tay",
     basePrice: 1890000,
     source: "xa-kho",
+    location: "Kho Bình Dương",
     descriptionBase:
       "Xe đạp trẻ em an toàn, khung nhỏ gọn, phù hợp bé 4-7 tuổi.",
+  },
+  {
+    name: "Asama EBike Trend",
+    brand: "Asama",
+    category: "ELECTRIC",
+    productType: "Xe Đạp Điện",
+    configuration:
+      "Động cơ 250W trợ lực, pin Lithium 36V 10Ah, phanh đĩa cơ, bánh 24 inch",
+    basePrice: 8900000,
+    source: "xa-kho",
+    location: "Kho Bình Dương",
+    descriptionBase:
+      "Xe đạp điện trợ lực êm ái, hỗ trợ đi xa không tốn sức, phù hợp đi làm, đi học hàng ngày.",
   },
 ];
 
@@ -167,9 +196,31 @@ function analyzeAdminNotes(notes: string): {
   return { conditionPercent, scratches, noteSummary };
 }
 
-type Stage = "input" | "analyzing" | "review" | "published";
+type Stage = "input" | "analyzing" | "review";
+
+function blobUrlToDataUrl(blobUrl: string): Promise<string> {
+  return fetch(blobUrl)
+    .then((res) => res.blob())
+    .then(
+      (blob) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        })
+    );
+}
+
+function conditionPercentToBikeCondition(conditionPercent: number): BikeCondition {
+  if (conditionPercent >= 100) return "moi-100";
+  if (conditionPercent >= 95) return "moi-99";
+  return "da-qua-su-dung";
+}
 
 export default function AutoListingPage() {
+  const router = useRouter();
+  const { addBike } = useBikes();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [adminNotes, setAdminNotes] = useState("");
@@ -178,6 +229,8 @@ export default function AutoListingPage() {
   const [draft, setDraft] = useState<AiListingDraft | null>(null);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [gallery, setGallery] = useState<string[]>([]);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishError, setPublishError] = useState("");
 
   const addFiles = (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter((file) =>
@@ -237,6 +290,7 @@ export default function AutoListingPage() {
         scratches,
         price: template.basePrice,
         source: template.source,
+        location: template.location,
         description: [template.descriptionBase, noteSummary]
           .filter(Boolean)
           .join(" "),
@@ -248,19 +302,57 @@ export default function AutoListingPage() {
     }, 2000);
   };
 
-  const handlePublish = () => {
-    setStage("published");
-  };
+  const handlePublish = async () => {
+    if (!draft || !thumbnail) return;
 
-  const handleReset = () => {
-    images.forEach((img) => URL.revokeObjectURL(img.url));
-    setImages([]);
-    setAdminNotes("");
-    setDraft(null);
-    setThumbnail(null);
-    setGallery([]);
-    setStage("input");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    setIsPublishing(true);
+    setPublishError("");
+
+    try {
+      const [persistedThumbnail, ...persistedGallery] = await Promise.all(
+        [thumbnail, ...gallery].map(blobUrlToDataUrl)
+      );
+
+      const heightRange = DEFAULT_HEIGHT_RANGE_BY_CATEGORY[draft.category];
+      const now = Date.now();
+
+      const newBike: Bike = {
+        id: crypto.randomUUID(),
+        slug: `${slugify(draft.name)}-${now}`,
+        name: draft.name,
+        brand: draft.brand,
+        productType: draft.productType,
+        category: draft.category,
+        source: draft.source,
+        condition: conditionPercentToBikeCondition(draft.conditionPercent),
+        originalPrice: draft.price,
+        price: draft.price,
+        discountPercent: 0,
+        stock: 1,
+        images: [persistedThumbnail, ...persistedGallery],
+        thumbnail: persistedThumbnail,
+        description: draft.description,
+        specs: {
+          "Cấu hình": draft.configuration,
+          "Tình trạng ngoại quan": draft.scratches,
+        },
+        location: draft.location,
+        isActive: true,
+        heightMin: heightRange.heightMin,
+        heightMax: heightRange.heightMax,
+        createdAt: new Date(now).toISOString(),
+      };
+
+      addBike(newBike);
+      images.forEach((img) => URL.revokeObjectURL(img.url));
+      router.push("/admin/products");
+    } catch (error) {
+      console.error("Failed to publish bike:", error);
+      setPublishError(
+        "Có lỗi xảy ra khi lưu sản phẩm, vui lòng thử lại."
+      );
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -405,28 +497,6 @@ export default function AutoListingPage() {
                   </>
                 )}
               </div>
-            ) : stage === "published" ? (
-              <div className="flex h-full min-h-[280px] flex-col items-center justify-center gap-3 text-center">
-                {thumbnail && (
-                  <div className="relative h-24 w-24 overflow-hidden rounded-xl border">
-                    <Image
-                      src={thumbnail}
-                      alt="Ảnh đại diện sản phẩm"
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  </div>
-                )}
-                <CheckCircle2 className="h-10 w-10 text-green-600" />
-                <p className="text-lg font-semibold">Đã Đăng Bài Thành Công!</p>
-                <p className="text-sm text-muted-foreground">
-                  Sản phẩm &quot;{draft?.name}&quot; đã được thêm vào cửa hàng.
-                </p>
-                <Button variant="outline" onClick={handleReset}>
-                  Đăng Sản Phẩm Khác
-                </Button>
-              </div>
             ) : (
               draft && (
                 <div className="flex flex-col gap-4">
@@ -557,6 +627,17 @@ export default function AutoListingPage() {
                     </div>
                   </div>
 
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="ai-location">Địa Chỉ / Kho Xe</Label>
+                    <Input
+                      id="ai-location"
+                      value={draft.location}
+                      onChange={(e) =>
+                        setDraft({ ...draft, location: e.target.value })
+                      }
+                    />
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="ai-condition-percent">
@@ -600,9 +681,22 @@ export default function AutoListingPage() {
                     />
                   </div>
 
-                  <Button size="lg" onClick={handlePublish}>
-                    <CheckCircle2 className="h-4 w-4" />
-                    Đăng Sản Phẩm
+                  {publishError && (
+                    <p className="text-sm text-destructive">{publishError}</p>
+                  )}
+
+                  <Button size="lg" onClick={handlePublish} disabled={isPublishing}>
+                    {isPublishing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Đang Đăng Bài...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-4 w-4" />
+                        Đăng Sản Phẩm
+                      </>
+                    )}
                   </Button>
                 </div>
               )

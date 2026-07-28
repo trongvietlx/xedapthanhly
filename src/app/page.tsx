@@ -1,11 +1,14 @@
+"use client";
+
 import { Bike as BikeIcon, PhoneCall, ShieldCheck, Truck } from "lucide-react";
 
-import { mockBikes } from "@/data/mockBikes";
+import { useBikes } from "@/context/BikeContext";
 import { AiAdvisorWidget } from "@/components/AiAdvisorWidget";
 import { CategoryBikeExplorer } from "@/components/CategoryBikeExplorer";
 
 export default function HomePage() {
-  const activeBikes = mockBikes.filter((bike) => bike.isActive);
+  const { bikes } = useBikes();
+  const activeBikes = bikes.filter((bike) => bike.isActive);
 
   return (
     <main>

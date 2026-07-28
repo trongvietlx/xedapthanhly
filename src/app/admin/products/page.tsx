@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import { Megaphone, Search, Trash2 } from "lucide-react";
 
-import { mockBikes } from "@/data/mockBikes";
+import { useBikes } from "@/context/BikeContext";
 import { Bike, BIKE_CATEGORIES, BikeCategory } from "@/types/bike";
 import { SourceBadge } from "@/components/SourceBadge";
 import { SocialContentPanel } from "@/components/SocialContentPanel";
@@ -35,10 +35,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatPriceVND } from "@/lib/utils";
+import { formatPriceVND, isDataUrl } from "@/lib/utils";
 
 export default function AdminProductsPage() {
-  const [bikes, setBikes] = useState<Bike[]>(mockBikes);
+  const { bikes, toggleBikeActive, deleteBike: removeBikeFromStore } =
+    useBikes();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<BikeCategory | "all">(
     "all"
@@ -63,20 +64,12 @@ export default function AdminProductsPage() {
       );
   }, [bikes, search, categoryFilter]);
 
-  const toggleActive = (bikeId: string) => {
-    setBikes((prev) =>
-      prev.map((bike) =>
-        bike.id === bikeId ? { ...bike, isActive: !bike.isActive } : bike
-      )
-    );
-  };
-
-  const deleteBike = (bike: Bike) => {
+  const handleDeleteBike = (bike: Bike) => {
     const confirmed = window.confirm(
       `Xóa hẳn "${bike.name}" khỏi hệ thống? Xe cũ độc bản, hành động này không thể hoàn tác.`
     );
     if (!confirmed) return;
-    setBikes((prev) => prev.filter((b) => b.id !== bike.id));
+    removeBikeFromStore(bike.id);
   };
 
   const openSocialGenerator = (bike: Bike) => {
@@ -182,6 +175,7 @@ export default function AdminProductsPage() {
                         fill
                         className="object-cover"
                         sizes="48px"
+                        unoptimized={isDataUrl(bike.thumbnail)}
                       />
                     </div>
                     <div>
@@ -212,7 +206,7 @@ export default function AdminProductsPage() {
                   <div className="flex items-center gap-3">
                     <Switch
                       checked={bike.isActive}
-                      onCheckedChange={() => toggleActive(bike.id)}
+                      onCheckedChange={() => toggleBikeActive(bike.id)}
                       aria-label={`Bật/tắt hiển thị ${bike.name}`}
                     />
                     <span
@@ -239,7 +233,7 @@ export default function AdminProductsPage() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => deleteBike(bike)}
+                      onClick={() => handleDeleteBike(bike)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       Xóa Xe

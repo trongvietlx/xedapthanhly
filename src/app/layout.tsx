@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { FacebookPixel } from "@/components/FacebookPixel";
+import { BikeProvider } from "@/context/BikeContext";
 
 export const metadata: Metadata = {
   title: "Xe Đạp Thanh Lý - Xả Kho & Trưng Bày Chính Hãng",
@@ -19,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className="min-h-screen antialiased">
-        {children}
+        <BikeProvider>{children}</BikeProvider>
         <FacebookPixel />
       </body>
       {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}

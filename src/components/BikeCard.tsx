@@ -9,7 +9,7 @@ import { Bike } from "@/types/bike";
 import { Button } from "@/components/ui/button";
 import { SourceBadge } from "@/components/SourceBadge";
 import { BookingModal } from "@/components/BookingModal";
-import { formatPriceVND } from "@/lib/utils";
+import { formatPriceVND, isDataUrl } from "@/lib/utils";
 
 interface BikeCardProps {
   bike: Bike;
@@ -28,6 +28,7 @@ export function BikeCard({ bike }: BikeCardProps) {
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            unoptimized={isDataUrl(bike.thumbnail)}
           />
           <div className="absolute left-3 top-3">
             <SourceBadge source={bike.source} />
