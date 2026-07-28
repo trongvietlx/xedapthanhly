@@ -32,6 +32,8 @@ export const mockBikes: Bike[] = [
     location: "Kho Bình Dương",
     isFeatured: true,
     isActive: true,
+    heightMin: 160,
+    heightMax: 185,
     createdAt: "2026-07-20",
   },
   {
@@ -65,6 +67,8 @@ export const mockBikes: Bike[] = [
     location: "Showroom Quận 7, TP.HCM",
     isFeatured: true,
     isActive: true,
+    heightMin: 165,
+    heightMax: 190,
     createdAt: "2026-07-18",
   },
   {
@@ -98,6 +102,8 @@ export const mockBikes: Bike[] = [
     location: "Showroom Quận 1, TP.HCM",
     isFeatured: true,
     isActive: true,
+    heightMin: 165,
+    heightMax: 185,
     createdAt: "2026-07-25",
   },
   {
@@ -129,6 +135,8 @@ export const mockBikes: Bike[] = [
     },
     location: "Kho Bình Dương",
     isActive: true,
+    heightMin: 150,
+    heightMax: 175,
     createdAt: "2026-07-15",
   },
   {
@@ -160,6 +168,8 @@ export const mockBikes: Bike[] = [
     },
     location: "Showroom Quận 7, TP.HCM",
     isActive: false,
+    heightMin: 165,
+    heightMax: 190,
     createdAt: "2026-07-10",
   },
   {
@@ -191,6 +201,8 @@ export const mockBikes: Bike[] = [
     },
     location: "Showroom Quận 1, TP.HCM",
     isActive: true,
+    heightMin: 155,
+    heightMax: 180,
     createdAt: "2026-07-22",
   },
   {
@@ -222,6 +234,8 @@ export const mockBikes: Bike[] = [
     },
     location: "Kho Bình Dương",
     isActive: true,
+    heightMin: 100,
+    heightMax: 120,
     createdAt: "2026-07-21",
   },
   {
@@ -253,6 +267,8 @@ export const mockBikes: Bike[] = [
     },
     location: "Showroom Quận 7, TP.HCM",
     isActive: true,
+    heightMin: 115,
+    heightMax: 135,
     createdAt: "2026-07-19",
   },
   {
@@ -283,6 +299,8 @@ export const mockBikes: Bike[] = [
     },
     location: "Showroom Quận 1, TP.HCM",
     isActive: false,
+    heightMin: 150,
+    heightMax: 170,
     createdAt: "2026-06-30",
   },
 ];

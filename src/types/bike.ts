@@ -58,6 +58,12 @@ export const BIKE_CATEGORY_ORDER: BikeCategory[] = [
 
 export type BikeCondition = "moi-100" | "moi-99" | "da-qua-su-dung";
 
+export const BIKE_CONDITION_LABELS: Record<BikeCondition, string> = {
+  "moi-100": "Mới 100%, chưa qua sử dụng",
+  "moi-99": "Xe trưng bày, mới 99%",
+  "da-qua-su-dung": "Đã qua sử dụng",
+};
+
 export interface Bike {
   id: string;
   slug: string;
@@ -80,5 +86,9 @@ export interface Bike {
   isFeatured?: boolean;
   /** false = ẩn khỏi web (hết xe / ngừng theo dõi) */
   isActive: boolean;
+  /** Chiều cao người lái tối thiểu phù hợp (cm) */
+  heightMin: number;
+  /** Chiều cao người lái tối đa phù hợp (cm) */
+  heightMax: number;
   createdAt: string;
 }

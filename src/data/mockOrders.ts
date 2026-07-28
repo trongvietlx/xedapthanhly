@@ -54,4 +54,16 @@ export const mockOrders: Order[] = [
     status: "huy",
     createdAt: "2026-07-20T16:20:00+07:00",
   },
+  {
+    id: "o6",
+    customerName: "Vũ Thị Hạnh",
+    customerPhone: "0966112233",
+    bikeId: "b7",
+    bikeName: "Royal Baby 16 inch",
+    bikePrice: 1890000,
+    note: "Mua cho con gái 5 tuổi",
+    status: "moi",
+    // Đơn vừa đặt cách đây vài phút - vẫn còn trong hạn SLA 15 phút.
+    createdAt: "2026-07-28T16:10:00+07:00",
+  },
 ];

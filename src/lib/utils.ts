@@ -12,3 +12,11 @@ export function formatPriceVND(price: number) {
     maximumFractionDigits: 0,
   }).format(price);
 }
+
+export function toZaloLink(phone: string): string {
+  const digitsOnly = phone.replace(/\D/g, "");
+  const normalized = digitsOnly.startsWith("0")
+    ? `84${digitsOnly.slice(1)}`
+    : digitsOnly;
+  return `https://zalo.me/${normalized}`;
+}

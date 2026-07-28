@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Phone, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Clock, MessageCircle, Phone, Search } from "lucide-react";
 
 import { mockOrders } from "@/data/mockOrders";
 import { Order, ORDER_STATUSES, OrderStatus } from "@/types/order";
@@ -23,12 +23,52 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatPriceVND } from "@/lib/utils";
+import { formatPriceVND, toZaloLink } from "@/lib/utils";
+
+const SLA_MINUTES = 15;
+
+function SlaBadge({ createdAt, now }: { createdAt: string; now: number | null }) {
+  if (now === null) {
+    return (
+      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+        <Clock className="h-3.5 w-3.5" />
+        Đang tính...
+      </span>
+    );
+  }
+
+  const elapsedMs = now - new Date(createdAt).getTime();
+  const elapsedMinutes = Math.floor(elapsedMs / 60000);
+  const remaining = SLA_MINUTES - elapsedMinutes;
+
+  if (remaining > 0) {
+    return (
+      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
+        <Clock className="h-3.5 w-3.5" />
+        Còn {remaining} phút
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex animate-pulse items-center gap-1 whitespace-nowrap rounded-full bg-red-600 px-2.5 py-1 text-xs font-semibold text-white">
+      <AlertTriangle className="h-3.5 w-3.5" />
+      QUÁ HẠN {Math.abs(remaining)} phút
+    </span>
+  );
+}
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>(mockOrders);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNow(Date.now());
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const filteredOrders = useMemo(() => {
     return orders
@@ -57,6 +97,16 @@ export default function AdminOrdersPage() {
   };
 
   const newOrdersCount = orders.filter((o) => o.status === "moi").length;
+  const overdueCount =
+    now === null
+      ? 0
+      : orders.filter(
+          (o) =>
+            o.status === "moi" &&
+            SLA_MINUTES -
+              Math.floor((now - new Date(o.createdAt).getTime()) / 60000) <=
+              0
+        ).length;
 
   return (
     <main className="container py-8">
@@ -67,7 +117,7 @@ export default function AdminOrdersPage() {
         </p>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-3 gap-4">
         <Card>
           <CardHeader className="p-4 pb-0">
             <CardTitle className="text-2xl">{orders.length}</CardTitle>
@@ -84,6 +134,20 @@ export default function AdminOrdersPage() {
           </CardHeader>
           <CardContent className="p-4 pt-1 text-sm text-muted-foreground">
             Đơn mới cần xử lý
+          </CardContent>
+        </Card>
+        <Card className={overdueCount > 0 ? "border-red-300 bg-red-50" : ""}>
+          <CardHeader className="p-4 pb-0">
+            <CardTitle
+              className={
+                overdueCount > 0 ? "text-2xl text-red-600" : "text-2xl"
+              }
+            >
+              {overdueCount}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-1 text-sm text-muted-foreground">
+            Đơn quá hạn 15 phút chưa gọi
           </CardContent>
         </Card>
       </div>
@@ -126,6 +190,7 @@ export default function AdminOrdersPage() {
               <TableHead>Xe Đặt</TableHead>
               <TableHead>Giá</TableHead>
               <TableHead>Thời Gian</TableHead>
+              <TableHead>Nhắc Nhở</TableHead>
               <TableHead>Trạng Thái</TableHead>
             </TableRow>
           </TableHeader>
@@ -141,18 +206,36 @@ export default function AdminOrdersPage() {
                   )}
                 </TableCell>
                 <TableCell>
-                  <a
-                    href={`tel:${order.customerPhone}`}
-                    className="flex items-center gap-1 text-primary hover:underline"
-                  >
-                    <Phone className="h-3.5 w-3.5" />
-                    {order.customerPhone}
-                  </a>
+                  <div className="flex flex-col gap-1">
+                    <a
+                      href={`tel:${order.customerPhone}`}
+                      className="flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      {order.customerPhone}
+                    </a>
+                    <a
+                      href={toZaloLink(order.customerPhone)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-fit items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100"
+                    >
+                      <MessageCircle className="h-3 w-3" />
+                      Gõ Nhanh Zalo
+                    </a>
+                  </div>
                 </TableCell>
                 <TableCell>{order.bikeName}</TableCell>
                 <TableCell>{formatPriceVND(order.bikePrice)}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {new Date(order.createdAt).toLocaleString("vi-VN")}
+                </TableCell>
+                <TableCell>
+                  {order.status === "moi" ? (
+                    <SlaBadge createdAt={order.createdAt} now={now} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Select
@@ -182,7 +265,7 @@ export default function AdminOrdersPage() {
 
             {filteredOrders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                   Không tìm thấy đơn hàng nào.
                 </TableCell>
               </TableRow>

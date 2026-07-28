@@ -2,6 +2,7 @@ import { Bike as BikeIcon, PhoneCall, ShieldCheck, Truck } from "lucide-react";
 
 import { mockBikes } from "@/data/mockBikes";
 import { BikeCard } from "@/components/BikeCard";
+import { AiAdvisorWidget } from "@/components/AiAdvisorWidget";
 import { BIKE_CATEGORIES, BIKE_CATEGORY_ORDER } from "@/types/bike";
 
 export default function HomePage() {
@@ -51,7 +52,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="container flex flex-col gap-12 py-10">
+      <div className="container py-10">
+        <AiAdvisorWidget bikes={activeBikes} />
+      </div>
+
+      <div className="container flex flex-col gap-12 pb-10">
         {BIKE_CATEGORY_ORDER.map((category) => {
           const categoryInfo = BIKE_CATEGORIES[category];
           const bikesInCategory = activeBikes.filter(
