@@ -41,6 +41,7 @@ import {
   DEFAULT_HEIGHT_RANGE_BY_CATEGORY,
 } from "@/types/bike";
 import { cn, formatPriceVND, slugify } from "@/lib/utils";
+import { resizeImageToDataUrl } from "@/lib/imageResize";
 
 interface UploadedImage {
   id: string;
@@ -198,20 +199,6 @@ function analyzeAdminNotes(notes: string): {
 
 type Stage = "input" | "analyzing" | "review";
 
-function blobUrlToDataUrl(blobUrl: string): Promise<string> {
-  return fetch(blobUrl)
-    .then((res) => res.blob())
-    .then(
-      (blob) =>
-        new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
-        })
-    );
-}
-
 function conditionPercentToBikeCondition(conditionPercent: number): BikeCondition {
   if (conditionPercent >= 100) return "moi-100";
   if (conditionPercent >= 95) return "moi-99";
@@ -310,7 +297,7 @@ export default function AutoListingPage() {
 
     try {
       const [persistedThumbnail, ...persistedGallery] = await Promise.all(
-        [thumbnail, ...gallery].map(blobUrlToDataUrl)
+        [thumbnail, ...gallery].map((url) => resizeImageToDataUrl(url))
       );
 
       const heightRange = DEFAULT_HEIGHT_RANGE_BY_CATEGORY[draft.category];
@@ -343,7 +330,16 @@ export default function AutoListingPage() {
         createdAt: new Date(now).toISOString(),
       };
 
-      addBike(newBike);
+      const success = addBike(newBike);
+
+      if (!success) {
+        setPublishError(
+          "Không thể lưu sản phẩm - dung lượng ảnh vượt quá giới hạn lưu trữ của trình duyệt. Vui lòng dùng ít ảnh hơn hoặc ảnh nhẹ hơn rồi thử lại."
+        );
+        setIsPublishing(false);
+        return;
+      }
+
       images.forEach((img) => URL.revokeObjectURL(img.url));
       router.push("/admin/products");
     } catch (error) {
