@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Check, Copy, Megaphone, Search, Trash2 } from "lucide-react";
+import { Megaphone, Search, Trash2 } from "lucide-react";
 
 import { mockBikes } from "@/data/mockBikes";
 import { Bike, BIKE_CATEGORIES, BikeCategory } from "@/types/bike";
 import { SourceBadge } from "@/components/SourceBadge";
-import { generateSocialContent } from "@/lib/socialContent";
+import { SocialContentPanel } from "@/components/SocialContentPanel";
 import {
   Table,
   TableBody,
@@ -20,7 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -38,8 +37,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPriceVND } from "@/lib/utils";
 
-type CopyKey = "facebook" | "chotot";
-
 export default function AdminProductsPage() {
   const [bikes, setBikes] = useState<Bike[]>(mockBikes);
   const [search, setSearch] = useState("");
@@ -47,7 +44,6 @@ export default function AdminProductsPage() {
     "all"
   );
   const [socialBike, setSocialBike] = useState<Bike | null>(null);
-  const [copiedKey, setCopiedKey] = useState<CopyKey | null>(null);
 
   const filteredBikes = useMemo(() => {
     return bikes
@@ -84,20 +80,7 @@ export default function AdminProductsPage() {
   };
 
   const openSocialGenerator = (bike: Bike) => {
-    setCopiedKey(null);
     setSocialBike(bike);
-  };
-
-  const socialContent = socialBike ? generateSocialContent(socialBike) : null;
-
-  const copyToClipboard = async (key: CopyKey, text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedKey(key);
-      setTimeout(() => setCopiedKey((prev) => (prev === key ? null : prev)), 2000);
-    } catch (error) {
-      console.error("Failed to copy social content:", error);
-    }
   };
 
   const activeCount = bikes.filter((b) => b.isActive).length;
@@ -282,7 +265,6 @@ export default function AdminProductsPage() {
         onOpenChange={(open) => {
           if (!open) {
             setSocialBike(null);
-            setCopiedKey(null);
           }
         }}
       >
@@ -298,73 +280,9 @@ export default function AdminProductsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {socialContent && (
-            <div className="grid max-h-[60vh] grid-cols-1 gap-4 overflow-y-auto sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold">
-                    Mẫu 1: Facebook / Zalo (giật gân)
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      copyToClipboard("facebook", socialContent.facebookPost)
-                    }
-                  >
-                    {copiedKey === "facebook" ? (
-                      <>
-                        <Check className="h-3.5 w-3.5" />
-                        Đã Copy
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5" />
-                        Copy Nội Dung
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <Textarea
-                  readOnly
-                  value={socialContent.facebookPost}
-                  rows={16}
-                  className="font-mono text-xs"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold">
-                    Mẫu 2: Chợ Tốt (minh bạch)
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      copyToClipboard("chotot", socialContent.choTotPost)
-                    }
-                  >
-                    {copiedKey === "chotot" ? (
-                      <>
-                        <Check className="h-3.5 w-3.5" />
-                        Đã Copy
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5" />
-                        Copy Nội Dung
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <Textarea
-                  readOnly
-                  value={socialContent.choTotPost}
-                  rows={16}
-                  className="font-mono text-xs"
-                />
-              </div>
+          {socialBike && (
+            <div className="max-h-[60vh] overflow-y-auto">
+              <SocialContentPanel bike={socialBike} />
             </div>
           )}
         </DialogContent>
