@@ -1,9 +1,8 @@
 import { Bike as BikeIcon, PhoneCall, ShieldCheck, Truck } from "lucide-react";
 
 import { mockBikes } from "@/data/mockBikes";
-import { BikeCard } from "@/components/BikeCard";
 import { AiAdvisorWidget } from "@/components/AiAdvisorWidget";
-import { BIKE_CATEGORIES, BIKE_CATEGORY_ORDER } from "@/types/bike";
+import { CategoryBikeExplorer } from "@/components/CategoryBikeExplorer";
 
 export default function HomePage() {
   const activeBikes = mockBikes.filter((bike) => bike.isActive);
@@ -56,37 +55,8 @@ export default function HomePage() {
         <AiAdvisorWidget bikes={activeBikes} />
       </div>
 
-      <div className="container flex flex-col gap-12 pb-10">
-        {BIKE_CATEGORY_ORDER.map((category) => {
-          const categoryInfo = BIKE_CATEGORIES[category];
-          const bikesInCategory = activeBikes.filter(
-            (bike) => bike.category === category
-          );
-
-          if (bikesInCategory.length === 0) return null;
-
-          return (
-            <section key={category}>
-              <div className="mb-5 flex flex-col gap-1">
-                <h2 className="text-2xl font-bold">{categoryInfo.label}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {categoryInfo.description}
-                </p>
-              </div>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {bikesInCategory.map((bike) => (
-                  <BikeCard key={bike.id} bike={bike} />
-                ))}
-              </div>
-            </section>
-          );
-        })}
-
-        {activeBikes.length === 0 && (
-          <p className="py-12 text-center text-muted-foreground">
-            Hiện chưa có xe nào đang được bày bán.
-          </p>
-        )}
+      <div className="container pb-10">
+        <CategoryBikeExplorer bikes={activeBikes} />
       </div>
 
       <footer className="border-t bg-muted/40 py-8">

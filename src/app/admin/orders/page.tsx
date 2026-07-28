@@ -81,7 +81,8 @@ export default function AdminOrdersPage() {
         return (
           order.customerName.toLowerCase().includes(q) ||
           order.customerPhone.includes(q) ||
-          order.bikeName.toLowerCase().includes(q)
+          order.bikeName.toLowerCase().includes(q) ||
+          (order.address?.toLowerCase().includes(q) ?? false)
         );
       })
       .sort(
@@ -187,6 +188,7 @@ export default function AdminOrdersPage() {
             <TableRow>
               <TableHead>Khách Hàng</TableHead>
               <TableHead>Số Điện Thoại</TableHead>
+              <TableHead>Địa Chỉ</TableHead>
               <TableHead>Xe Đặt</TableHead>
               <TableHead>Giá</TableHead>
               <TableHead>Thời Gian</TableHead>
@@ -224,6 +226,9 @@ export default function AdminOrdersPage() {
                       Gõ Nhanh Zalo
                     </a>
                   </div>
+                </TableCell>
+                <TableCell className="max-w-[160px] text-sm text-muted-foreground">
+                  {order.address || "—"}
                 </TableCell>
                 <TableCell>{order.bikeName}</TableCell>
                 <TableCell>{formatPriceVND(order.bikePrice)}</TableCell>
@@ -265,7 +270,7 @@ export default function AdminOrdersPage() {
 
             {filteredOrders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                   Không tìm thấy đơn hàng nào.
                 </TableCell>
               </TableRow>

@@ -27,6 +27,7 @@ type SubmitState = "idle" | "submitting" | "success" | "error";
 export function BookingModal({ bike, open, onOpenChange }: BookingModalProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [state, setState] = useState<SubmitState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -36,6 +37,7 @@ export function BookingModal({ bike, open, onOpenChange }: BookingModalProps) {
       setTimeout(() => {
         setName("");
         setPhone("");
+        setAddress("");
         setState("idle");
         setErrorMessage("");
       }, 200);
@@ -56,6 +58,7 @@ export function BookingModal({ bike, open, onOpenChange }: BookingModalProps) {
         body: JSON.stringify({
           name: name.trim(),
           phone: phone.trim(),
+          address: address.trim(),
           bikeId: bike.id,
           bikeName: bike.name,
           bikePrice: bike.price,
@@ -77,12 +80,12 @@ export function BookingModal({ bike, open, onOpenChange }: BookingModalProps) {
         {state === "success" ? (
           <div className="flex flex-col items-center gap-3 py-6 text-center animate-in fade-in">
             <CheckCircle2 className="h-14 w-14 text-green-600" />
-            <DialogTitle>Giữ Xe Thành Công!</DialogTitle>
+            <DialogTitle>🎉 Đặt Giữ Xe Thành Công!</DialogTitle>
             <DialogDescription>
               Cảm ơn <strong>{name}</strong>, chúng tôi đã giữ xe{" "}
-              <strong>{bike.name}</strong> cho bạn. Nhân viên tư vấn sẽ gọi tới
-              số <strong>{phone}</strong> trong vòng 15 phút để xác nhận đơn
-              hàng.
+              <strong>{bike.name}</strong> cho bạn. Shop bên em sẽ chủ động
+              liên hệ với anh/chị qua Điện thoại hoặc Zalo để xác nhận đơn
+              hàng sớm nhất. Anh/chị chú ý điện thoại giúp shop nhé!
             </DialogDescription>
             <Button className="mt-2 w-full" onClick={() => resetAndClose(false)}>
               Đóng
@@ -129,6 +132,15 @@ export function BookingModal({ bike, open, onOpenChange }: BookingModalProps) {
                   pattern="[0-9]{9,11}"
                 />
               </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="address">Địa Chỉ Giao Hàng / Tỉnh Thành</Label>
+                <Input
+                  id="address"
+                  placeholder="VD: Quận 7, TP.HCM"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </div>
 
               {state === "error" && (
                 <p className="text-sm text-destructive">{errorMessage}</p>
@@ -145,8 +157,9 @@ export function BookingModal({ bike, open, onOpenChange }: BookingModalProps) {
                 )}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                Không mất phí đặt cọc - Chúng tôi sẽ gọi lại xác nhận trong 15
-                phút
+                Không mất phí đặt cọc - Shop bên em sẽ chủ động liên hệ với
+                anh chị qua điện thoại hoặc tin nhắn Zalo để xác nhận, anh
+                chị để ý điện thoại giúp bên em nhé!
               </p>
             </form>
           </>

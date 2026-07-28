@@ -35,6 +35,7 @@ export interface Order {
   id: string;
   customerName: string;
   customerPhone: string;
+  address?: string;
   bikeId: string;
   bikeName: string;
   bikePrice: number;

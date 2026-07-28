@@ -112,7 +112,7 @@ export const mockBikes: Bike[] = [
     name: "Asama FLD 2701",
     brand: "Asama",
     productType: "Xe Đạp Gấp",
-    category: "STANDARD",
+    category: "FOLDING",
     source: "xa-kho",
     condition: "moi-100",
     originalPrice: 3200000,
@@ -302,6 +302,39 @@ export const mockBikes: Bike[] = [
     heightMin: 150,
     heightMax: 170,
     createdAt: "2026-06-30",
+  },
+  {
+    id: "b10",
+    slug: "asama-ebike-trend-xa-kho",
+    name: "Asama EBike Trend",
+    brand: "Asama",
+    productType: "Xe Đạp Điện",
+    category: "ELECTRIC",
+    source: "xa-kho",
+    condition: "moi-100",
+    originalPrice: 12000000,
+    price: 8900000,
+    discountPercent: 26,
+    stock: 8,
+    thumbnail:
+      "https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=800&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=1200&q=80",
+    ],
+    description:
+      "Xe đạp điện trợ lực Asama EBike Trend, xả kho số lượng lớn, động cơ êm ái hỗ trợ đi xa không tốn sức, phù hợp đi làm, đi học hàng ngày.",
+    specs: {
+      "Động cơ": "250W trợ lực",
+      "Pin": "Lithium 36V 10Ah",
+      "Quãng đường": "40 - 50 km/lần sạc",
+      "Phanh": "Disc cơ",
+      "Kích thước bánh": "24 inch",
+    },
+    location: "Kho Bình Dương",
+    isActive: true,
+    heightMin: 155,
+    heightMax: 180,
+    createdAt: "2026-07-23",
   },
 ];
 

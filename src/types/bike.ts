@@ -24,7 +24,12 @@ export const BIKE_SOURCES: Record<BikeSource, BikeSourceInfo> = {
   },
 };
 
-export type BikeCategory = "KIDS" | "STANDARD" | "SPORTS";
+export type BikeCategory =
+  | "SPORTS"
+  | "KIDS"
+  | "STANDARD"
+  | "ELECTRIC"
+  | "FOLDING";
 
 export interface BikeCategoryInfo {
   value: BikeCategory;
@@ -38,22 +43,34 @@ export const BIKE_CATEGORIES: Record<BikeCategory, BikeCategoryInfo> = {
     label: "Xe Đạp Thể Thao",
     description: "Xe địa hình, đua, touring hiệu suất cao",
   },
-  STANDARD: {
-    value: "STANDARD",
-    label: "Xe Đạp Thông Dụng",
-    description: "Xe đi làm, đi học, di chuyển hàng ngày",
-  },
   KIDS: {
     value: "KIDS",
     label: "Xe Đạp Trẻ Em",
     description: "Xe đạp dành cho các bé, nhiều size khác nhau",
   },
+  STANDARD: {
+    value: "STANDARD",
+    label: "Xe Đạp Thông Dụng",
+    description: "Xe đi làm, đi học, di chuyển hàng ngày",
+  },
+  ELECTRIC: {
+    value: "ELECTRIC",
+    label: "Xe Đạp Điện",
+    description: "Xe đạp trợ lực điện, di chuyển xa không tốn sức",
+  },
+  FOLDING: {
+    value: "FOLDING",
+    label: "Xe Đạp Gấp",
+    description: "Xe đạp gấp gọn, tiện lợi mang theo hoặc cất giữ",
+  },
 };
 
 export const BIKE_CATEGORY_ORDER: BikeCategory[] = [
   "SPORTS",
-  "STANDARD",
   "KIDS",
+  "STANDARD",
+  "ELECTRIC",
+  "FOLDING",
 ];
 
 export type BikeCondition = "moi-100" | "moi-99" | "da-qua-su-dung";

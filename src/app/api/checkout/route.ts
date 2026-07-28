@@ -4,6 +4,16 @@ import { Resend } from "resend";
 interface CheckoutPayload {
   name: string;
   phone: string;
+  address?: string;
+  bikeId: string;
+  bikeName: string;
+  bikePrice: number;
+}
+
+interface NotificationPayload {
+  name: string;
+  phone: string;
+  address: string;
   bikeId: string;
   bikeName: string;
   bikePrice: number;
@@ -12,7 +22,7 @@ interface CheckoutPayload {
 const ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL ?? "sale@xedapthanhly.vn";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
 
-async function sendAdminEmail(payload: Required<CheckoutPayload>, orderTime: string) {
+async function sendAdminEmail(payload: NotificationPayload, orderTime: string) {
   const resendApiKey = process.env.RESEND_API_KEY;
 
   if (!resendApiKey) {
@@ -32,10 +42,11 @@ async function sendAdminEmail(payload: Required<CheckoutPayload>, orderTime: str
         <h2>Có đơn giữ xe mới!</h2>
         <p><strong>Khách hàng:</strong> ${payload.name}</p>
         <p><strong>Số điện thoại:</strong> ${payload.phone}</p>
+        ${payload.address ? `<p><strong>Địa chỉ:</strong> ${payload.address}</p>` : ""}
         <p><strong>Xe đặt:</strong> ${payload.bikeName}</p>
         <p><strong>Giá:</strong> ${payload.bikePrice?.toLocaleString("vi-VN")} VNĐ</p>
         <p><strong>Thời gian:</strong> ${orderTime}</p>
-        <p>Vui lòng gọi lại xác nhận cho khách trong vòng 15 phút.</p>
+        <p>Vui lòng chủ động liên hệ lại cho khách qua điện thoại hoặc Zalo để xác nhận đơn hàng.</p>
       `,
     });
   } catch (error) {
@@ -46,7 +57,7 @@ async function sendAdminEmail(payload: Required<CheckoutPayload>, orderTime: str
 // Điền Bot Token & Chat ID qua biến môi trường TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID
 // (xem hướng dẫn tạo bot & lấy chat id trong .env.example).
 async function sendTelegramNotification(
-  payload: Required<CheckoutPayload>,
+  payload: NotificationPayload,
   orderTime: string
 ) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -62,11 +73,11 @@ async function sendTelegramNotification(
   const message = `🚲 <b>ĐƠN GIỮ XE MỚI!</b>
 👤 Khách hàng: ${payload.name}
 📞 SĐT: ${payload.phone}
-🚴 Xe: ${payload.bikeName}
+${payload.address ? `📍 Địa chỉ: ${payload.address}\n` : ""}🚴 Xe: ${payload.bikeName}
 💰 Giá: ${payload.bikePrice?.toLocaleString("vi-VN")} VNĐ
 🕐 Thời gian: ${orderTime}
 
-⚡️ Vui lòng gọi lại xác nhận cho khách trong vòng 15 phút!`;
+⚡️ Vui lòng chủ động liên hệ lại cho khách qua điện thoại hoặc Zalo để xác nhận!`;
 
   try {
     const response = await fetch(
@@ -93,7 +104,7 @@ async function sendTelegramNotification(
 
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as Partial<CheckoutPayload>;
-  const { name, phone, bikeId, bikeName, bikePrice } = body;
+  const { name, phone, address, bikeId, bikeName, bikePrice } = body;
 
   if (!name?.trim() || !phone?.trim() || !bikeId || !bikeName) {
     return NextResponse.json(
@@ -106,9 +117,10 @@ export async function POST(request: NextRequest) {
     timeZone: "Asia/Ho_Chi_Minh",
   });
 
-  const notificationPayload: Required<CheckoutPayload> = {
+  const notificationPayload: NotificationPayload = {
     name,
     phone,
+    address: address?.trim() ?? "",
     bikeId,
     bikeName,
     bikePrice: bikePrice ?? 0,
@@ -125,6 +137,7 @@ export async function POST(request: NextRequest) {
     order: {
       customerName: name,
       customerPhone: phone,
+      address: notificationPayload.address || undefined,
       bikeId,
       bikeName,
       bikePrice,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Ruler, Sparkles, Wallet } from "lucide-react";
+import { Ruler, Target, Wallet } from "lucide-react";
 
 import { Bike } from "@/types/bike";
 import { BikeCard } from "@/components/BikeCard";
@@ -32,7 +32,7 @@ function findMatches(bikes: Bike[], height: number, budget: number): MatchResult
   if (exactMatches.length > 0) {
     return {
       bikes: exactMatches.slice(0, 2),
-      note: "Đây là những chiếc xe AI thấy phù hợp nhất với chiều cao và ngân sách của bạn:",
+      note: "Đây là những chiếc xe phù hợp nhất với chiều cao và ngân sách của bạn:",
     };
   }
 
@@ -85,14 +85,14 @@ export function AiAdvisorWidget({ bikes }: AiAdvisorWidgetProps) {
       <Card className="border-2 border-primary/30 bg-primary/5">
         <CardContent className="flex flex-col gap-4 p-6">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-primary" />
+            <Target className="h-6 w-6 text-primary" />
             <h2 className="text-xl font-bold">
-              Chưa Biết Chọn Xe Nào? Hỏi AI Ngay
+              🎯 Chọn Xe Nhanh Theo Yêu Cầu Của Bạn
             </h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            Nhập chiều cao và ngân sách tối đa, AI sẽ lọc ngay chiếc xe phù
-            hợp nhất từ kho hàng hiện có.
+            Nhập chiều cao và ngân sách, hệ thống sẽ gợi ý ngay chiếc xe phù
+            hợp nhất trong kho.
           </p>
 
           <form
@@ -134,7 +134,7 @@ export function AiAdvisorWidget({ bikes }: AiAdvisorWidgetProps) {
               </div>
             </div>
             <Button type="submit" size="lg" className="w-full">
-              🤖 Tìm Xe Phù Hợp
+              🔍 Tìm Xe Phù Hợp
             </Button>
           </form>
 
