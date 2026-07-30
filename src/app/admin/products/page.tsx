@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Megaphone, Search, Trash2 } from "lucide-react";
+import { Megaphone, Pencil, Search, Trash2 } from "lucide-react";
 
 import { useBikes } from "@/context/BikeContext";
 import { Bike, BIKE_CATEGORIES, BikeCategory } from "@/types/bike";
 import { SourceBadge } from "@/components/SourceBadge";
 import { SocialContentPanel } from "@/components/SocialContentPanel";
+import { EditBikeDialog } from "@/components/EditBikeDialog";
 import {
   Table,
   TableBody,
@@ -45,6 +46,7 @@ export default function AdminProductsPage() {
     "all"
   );
   const [socialBike, setSocialBike] = useState<Bike | null>(null);
+  const [editingBike, setEditingBike] = useState<Bike | null>(null);
 
   const filteredBikes = useMemo(() => {
     return bikes
@@ -225,6 +227,14 @@ export default function AdminProductsPage() {
                     <Button
                       size="sm"
                       variant="outline"
+                      onClick={() => setEditingBike(bike)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Sửa
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() => openSocialGenerator(bike)}
                     >
                       <Megaphone className="h-3.5 w-3.5" />
@@ -281,6 +291,14 @@ export default function AdminProductsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <EditBikeDialog
+        bike={editingBike}
+        open={editingBike !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingBike(null);
+        }}
+      />
     </main>
   );
 }
